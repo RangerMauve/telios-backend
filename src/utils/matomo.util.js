@@ -32,20 +32,16 @@ class Matomo {
     }
 
     setInterval(async () => {
-      try {
-        const options = {
-          ...this.options,
-          headers: {
-            Authorization: `Bearer ${this._refreshToken()}`,
-            'Content-Type': 'application/json'
-          },
-          data: payload
-        }
-
-        await axios(options)
-      } catch (err) {
-        throw err
+      const options = {
+        ...this.options,
+        headers: {
+          Authorization: `Bearer ${this._refreshToken()}`,
+          'Content-Type': 'application/json'
+        },
+        data: payload
       }
+
+      await axios(options)
     }, interval)
   }
 
@@ -65,11 +61,7 @@ class Matomo {
       data: payload
     }
 
-    try {
-      await axios(options)
-    } catch (err) {
-      throw err
-    }
+    await axios(options)
   }
 
   _refreshToken () {

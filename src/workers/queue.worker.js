@@ -35,7 +35,7 @@ class QueueWorker {
           .then(() => {
             this.queue.splice(i, 1)
           })
-          .catch(err => {
+          .catch(() => {
             task.working = false
             task.failed += 1
           })

@@ -1,6 +1,5 @@
 const SDK = require('@telios/client-sdk')
 const Drive = require('@telios/nebula-drive')
-const fs = require('fs')
 const envAPI = require('./env_api.json')
 const Matomo = require('./utils/matomo.util')
 

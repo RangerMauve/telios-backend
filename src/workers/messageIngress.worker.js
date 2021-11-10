@@ -5,7 +5,8 @@ const removeMd = require('remove-markdown')
 const { request } = require('http')
 
 class MesssageIngress {
-  constructor () {
+  constructor (channel) {
+    this.channel = channel
     this.messagesMap = {}
     this.drive = null
     this.mailbox = null
@@ -25,7 +26,7 @@ class MesssageIngress {
     }
 
     this.drive.on('fetch-error', async e => {
-      channel.send({
+      this.channel.send({
         event: 'fetchError',
         error: {
           message: e.message,
@@ -72,7 +73,7 @@ class MesssageIngress {
             file.failed += 1
           }
 
-          channel.send({
+          this.channel.send({
             event: 'fetchError',
             error: {
               file,
@@ -85,10 +86,10 @@ class MesssageIngress {
         })
 
         stream.on('end', () => {
-          channel.send({ content })
+          this.channel.send({ content })
           content = JSON.parse(content)
 
-          channel.send({
+          this.channel.send({
             event: 'fileFetched',
             data: {
               _id: file._id,
@@ -129,7 +130,7 @@ class MesssageIngress {
           fileMeta.failed += 1
         }
 
-        channel.send({
+        this.channel.send({
           event: 'fetchError',
           error: {
             file: fileMeta,
@@ -152,7 +153,7 @@ class MesssageIngress {
           }
         })
 
-        channel.send({
+        this.channel.send({
           event: 'fileFetched',
           data: {
             _id: fileMeta._id,
@@ -165,7 +166,7 @@ class MesssageIngress {
         })
       })
     } catch (err) {
-      channel.send({
+      this.channel.send({
         event: 'fetchError',
         error: {
           file: fileMeta,
@@ -186,7 +187,7 @@ class MesssageIngress {
       selection.push('...')
     }
 
-    channel.send({
+    this.channel.send({
       event: 'notify',
       data: {
         icon: path.join(__dirname, '../img/telios_notify_icon.png'),
@@ -199,9 +200,9 @@ class MesssageIngress {
   };
 }
 
-const messageIngressWorker = new MesssageIngress()
-
 module.exports = async ({ channel, userDataPath }) => {
+  const messageIngressWorker = new MesssageIngress(channel)
+
   channel.on('message', async data => {
     const { event, payload } = data
 

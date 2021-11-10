@@ -3,7 +3,6 @@ const Sequelize = require('sequelize')
 const removeMd = require('remove-markdown')
 const { Model } = require('sequelize')
 const { File } = require('./file.model.js')
-const { Folder } = require('./folder.model')
 const fileUtil = require('../utils/file.util')
 const { v4: uuidv4 } = require('uuid')
 const store = require('../Store')
@@ -152,9 +151,9 @@ module.exports.init = async (channel, sequelize, opts) => {
       channel.send({
         event: 'BeforeUpdate-saveMessageToDBLOG',
         error: {
-          name: e.name,
-          message: e.message,
-          stacktrace: e.stack
+          name: err.name,
+          message: err.message,
+          stacktrace: err.stack
         }
       })
       throw err
@@ -184,25 +183,21 @@ module.exports.init = async (channel, sequelize, opts) => {
   })
 
   Email.addHook('beforeDestroy', async (email, options) => {
-    try {
-      const asyncArr = []
-      const drive = store.getDrive()
-      channel.send({ event: 'beforeDestroyEmail', email })
+    const asyncArr = []
+    const drive = store.getDrive()
+    channel.send({ event: 'beforeDestroyEmail', email })
 
-      asyncArr.push(collection.del(email.emailId))
-      asyncArr.push(drive.unlink(email.path))
+    asyncArr.push(collection.del(email.emailId))
+    asyncArr.push(drive.unlink(email.path))
 
-      asyncArr.push(
-        File.destroy({
-          where: { emailId: email.emailId },
-          individualHooks: true
-        })
-      )
+    asyncArr.push(
+      File.destroy({
+        where: { emailId: email.emailId },
+        individualHooks: true
+      })
+    )
 
-      const result = await Promise.all(asyncArr)
-    } catch (err) {
-      throw err
-    }
+    const result = await Promise.all(asyncArr)
   })
 
   return Email

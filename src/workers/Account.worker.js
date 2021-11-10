@@ -180,30 +180,31 @@ module.exports = ({ channel, userDataPath }) => {
       process.exit(0)
     }
   })
-}
 
-async function handleDriveMessages (drive, account) {
-  drive.on('message', (peerPubKey, data) => {
-    const msg = JSON.parse(data.toString())
+  async function handleDriveMessages (drive, account) {
+    drive.on('message', (peerPubKey, data) => {
+      const msg = JSON.parse(data.toString())
 
-    // Only connect to peers with the SDK priv/pub keypair
-    if (msg.type && peerPubKey === store.teliosPubKey) {
+      // Only connect to peers with the SDK priv/pub keypair
+      if (msg.type && peerPubKey === store.teliosPubKey) {
       // Service is telling client it has a new email to sync
-      if (msg.type === 'newMail') {
+        if (msg.type === 'newMail') {
+          channel.send({
+            event: 'newMessage',
+            data: { meta: msg.meta, account, async: true }
+          })
+        }
+      } else {
         channel.send({
-          event: 'newMessage',
-          data: { meta: msg.meta, account, async: true }
+          event: 'socketMessageErr',
+          error: {
+            // TODO: What goes here?
+            // name: e.name,
+            // message: e.message,
+            // stacktrace: e.stack
+          }
         })
       }
-    } else {
-      channel.send({
-        event: 'socketMessageErr',
-        error: {
-          name: e.name,
-          message: e.message,
-          stacktrace: e.stack
-        }
-      })
-    }
-  })
+    })
+  }
 }

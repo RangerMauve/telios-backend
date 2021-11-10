@@ -1,12 +1,10 @@
 /* eslint-disable class-methods-use-this */
 const path = require('path')
 const { Sequelize } = require('sequelize')
-const Corestore = require('corestore')
 const Umzug = require('umzug')
 const AccountModel = require('./account.model.js')
 const ContactModel = require('./contact.model.js')
 const EmailModel = require('./email.model.js')
-const EmailLabelModel = require('./emailLabel.model.js')
 const FileModel = require('./file.model.js')
 const FolderModel = require('./folder.model.js')
 const LabelModel = require('./label.model.js')
@@ -109,7 +107,7 @@ class Models {
           await umzug.up()
 
           opts.models.forEach(Model => {
-            asyncArr.push(Model.init(channel, sequelize, opts))
+            asyncArr.push(Model.init(this.channel, sequelize, opts))
           })
 
           await Promise.all(asyncArr)

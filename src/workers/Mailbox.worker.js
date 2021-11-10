@@ -586,7 +586,7 @@ module.exports = ({ channel, env }) => {
       try {
         const mailbox = await Mailbox.create({ address })
 
-        for (folder of DefaultFolders) {
+        for (const folder of DefaultFolders) {
           folder.mailboxId = mailbox.mailboxId
           await Folder.create(folder)
         }
