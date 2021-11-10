@@ -1,27 +1,27 @@
 /* eslint-disable no-await-in-loop */
-const store = require('../Store');
-const path = require('path');
-const removeMd = require('remove-markdown');
-const { request } = require('http');
+const store = require('../Store')
+const path = require('path')
+const removeMd = require('remove-markdown')
+const { request } = require('http')
 
 class MesssageIngress {
-  constructor() {
-    this.messagesMap = {};
-    this.drive = null;
-    this.mailbox = null;
-    this.errors = [];
+  constructor () {
+    this.messagesMap = {}
+    this.drive = null
+    this.mailbox = null
+    this.errors = []
 
-    this.BATCH_SIZE = 5;
+    this.BATCH_SIZE = 5
   }
 
-  async initDrive() {
-    if(!this.drive) {
-      this.drive = store.getDrive();
+  async initDrive () {
+    if (!this.drive) {
+      this.drive = store.getDrive()
     }
 
     // If worker is running before drive is ready then call .ready()
-    if(!this.drive.discoveryKey) {
-      await this.drive.ready();
+    if (!this.drive.discoveryKey) {
+      await this.drive.ready()
     }
 
     this.drive.on('fetch-error', async e => {
@@ -31,8 +31,8 @@ class MesssageIngress {
           message: e.message,
           stack: e.stack
         }
-      });
-    });
+      })
+    })
   }
 
   /**
@@ -40,52 +40,53 @@ class MesssageIngress {
    * a user needs to sync a large amount of messages. Requesting them synchronously would take a very long time,
    * and fetching all of them at once in parallel could be too large.
    */
-  async fetchBatch(files, account) {
-    this.mailbox = store.getMailbox();
+  async fetchBatch (files, account) {
+    this.mailbox = store.getMailbox()
 
     files = files.map(f => {
-      if(account) {
+      if (account) {
         const fileMeta = this.mailbox._decryptMailMeta(
           f,
           account.secretBoxPrivKey,
           account.secretBoxPubKey
-        );
+        )
 
-        f = { _id: f._id, ...fileMeta };
+        f = { _id: f._id, ...fileMeta }
       }
 
-      return f;
-    });
+      return f
+    })
 
     await this.drive.fetchFileBatch(files, (stream, file) => {
       return new Promise((resolve, reject) => {
-        let content = '';
+        let content = ''
 
         stream.on('data', chunk => {
-          content += chunk.toString('utf-8');
-        });
+          content += chunk.toString('utf-8')
+        })
 
         stream.on('error', err => {
-          if(!file.failed) {
-            file.failed = 1;
+          if (!file.failed) {
+            file.failed = 1
           } else {
-            file.failed += 1;
+            file.failed += 1
           }
 
-          channel.send({ event: 'fetchError',
+          channel.send({
+            event: 'fetchError',
             error: {
               file,
               message: err.message,
               stack: err.stack
             }
-          });
+          })
 
-          resolve();
-        });
+          resolve()
+        })
 
         stream.on('end', () => {
-          channel.send({ content });
-          content = JSON.parse(content);
+          channel.send({ content })
+          content = JSON.parse(content)
 
           channel.send({
             event: 'fileFetched',
@@ -95,51 +96,51 @@ class MesssageIngress {
                 key: file.key,
                 header: file.header,
                 content
-              },
+              }
             }
-          });
+          })
 
-          resolve();
-        });
+          resolve()
+        })
       })
-    });
+    })
   }
 
-  async fetchFile(discoveryKey, fileMeta) {
+  async fetchFile (discoveryKey, fileMeta) {
     try {
-      let keyPair;
+      let keyPair
 
-      while(!keyPair) {
-        keyPair = this.drive._workerKeyPairs.getKeyPair();
+      while (!keyPair) {
+        keyPair = this.drive._workerKeyPairs.getKeyPair()
       }
 
-      const stream = await this.drive.fetchFileByDriveHash(discoveryKey, fileMeta.hash, { key: fileMeta.key, header: fileMeta.header, keyPair });
+      const stream = await this.drive.fetchFileByDriveHash(discoveryKey, fileMeta.hash, { key: fileMeta.key, header: fileMeta.header, keyPair })
 
-      let content = '';
+      let content = ''
 
       stream.on('data', chunk => {
-        content += chunk.toString('utf-8');
-      });
+        content += chunk.toString('utf-8')
+      })
 
       stream.on('error', err => {
-
-        if(!fileMeta.failed) {
-          fileMeta.failed = 1;
+        if (!fileMeta.failed) {
+          fileMeta.failed = 1
         } else {
-          fileMeta.failed += 1;
+          fileMeta.failed += 1
         }
 
-        channel.send({ event: 'fetchError',
+        channel.send({
+          event: 'fetchError',
           error: {
             file: fileMeta,
             message: err.message,
             stack: err.stack
           }
-        });
-      });
+        })
+      })
 
       stream.on('end', () => {
-        content = JSON.parse(content);
+        content = JSON.parse(content)
 
         // Send OS notification
         this.notify({
@@ -149,7 +150,7 @@ class MesssageIngress {
             type: 'email',
             hash: fileMeta.hash
           }
-        });
+        })
 
         channel.send({
           event: 'fileFetched',
@@ -159,32 +160,34 @@ class MesssageIngress {
               key: fileMeta.key,
               header: fileMeta.header,
               content
-            },
+            }
           }
-        });
-      });
-    } catch(err) {
-      channel.send({ event: 'fetchError',
+        })
+      })
+    } catch (err) {
+      channel.send({
+        event: 'fetchError',
         error: {
           file: fileMeta,
           message: err.message,
           stack: err.stack
         }
-      });
+      })
     }
   }
 
-  notify({ title, message, metadata }) {
-    let bodyAsText = removeMd(message);
-    bodyAsText = bodyAsText.replace(/\[(.*?)\]/g, '');
-    bodyAsText = bodyAsText.replace(/(?:\u00a0|\u200C)/g, '');
-    const selection = bodyAsText.split(' ').slice(0, 20);
+  notify ({ title, message, metadata }) {
+    let bodyAsText = removeMd(message)
+    bodyAsText = bodyAsText.replace(/\[(.*?)\]/g, '')
+    bodyAsText = bodyAsText.replace(/(?:\u00a0|\u200C)/g, '')
+    const selection = bodyAsText.split(' ').slice(0, 20)
 
-    if(selection[selection.length-1] !== '...') {
-      selection.push('...');
+    if (selection[selection.length - 1] !== '...') {
+      selection.push('...')
     }
 
-    channel.send({ event: 'notify',
+    channel.send({
+      event: 'notify',
       data: {
         icon: path.join(__dirname, '../img/telios_notify_icon.png'),
         title,
@@ -192,34 +195,34 @@ class MesssageIngress {
         sound: true, // Only Notification Center or Windows Toasters
         metadata
       }
-    });
+    })
   };
 }
 
-const messageIngressWorker = new MesssageIngress();
+const messageIngressWorker = new MesssageIngress()
 
-module.exports = async ({channel, userDataPath}) => {
+module.exports = async ({ channel, userDataPath }) => {
   channel.on('message', async data => {
-    const { event, payload } = data;
+    const { event, payload } = data
 
     // This fires after mailbox has finshed initializing from inside mailbox.service
-    if(event === 'initMessageListener') {
-      await messageIngressWorker.initDrive();
+    if (event === 'initMessageListener') {
+      await messageIngressWorker.initDrive()
     }
 
     if (event === 'newMessageBatch') {
-      const { meta, account } = payload;
-      messageIngressWorker.fetchBatch(meta, account);
+      const { meta, account } = payload
+      messageIngressWorker.fetchBatch(meta, account)
     }
 
     if (event === 'newMessage') {
-      const { meta } = payload;
-      await messageIngressWorker.fetchFile(meta.discovery_key, meta);
+      const { meta } = payload
+      await messageIngressWorker.fetchFile(meta.discovery_key, meta)
     }
 
     if (event === 'retryMessageBatch') {
-      const { batch } = payload;
-      messageIngressWorker.fetchBatch(batch);
+      const { batch } = payload
+      messageIngressWorker.fetchBatch(batch)
     }
-  });
+  })
 }

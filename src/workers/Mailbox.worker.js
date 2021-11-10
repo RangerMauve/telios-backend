@@ -1,24 +1,24 @@
-const fs = require('fs');
-const Sequelize = require('sequelize');
-const { v4: uuidv4 } = require('uuid');
-const SDK = require('@telios/client-sdk');
-const { Mailbox } = require('../models/mailbox.model');
-const { Folder, DefaultFolders } = require('../models/folder.model');
-const { Email } = require('../models/email.model');
-const { File } = require('../models/file.model');
-const fileUtil = require('../utils/file.util');
-const store = require('../Store');
-const envAPI = require('../env_api.json');
+const fs = require('fs')
+const Sequelize = require('sequelize')
+const { v4: uuidv4 } = require('uuid')
+const SDK = require('@telios/client-sdk')
+const { Mailbox } = require('../models/mailbox.model')
+const { Folder, DefaultFolders } = require('../models/folder.model')
+const { Email } = require('../models/email.model')
+const { File } = require('../models/file.model')
+const fileUtil = require('../utils/file.util')
+const store = require('../Store')
+const envAPI = require('../env_api.json')
 
-const { Op } = Sequelize;
-let drive = store.getDrive();
+const { Op } = Sequelize
+let drive = store.getDrive()
 
-module.exports = ({channel, env}) => {
+module.exports = ({ channel, env }) => {
   channel.on('message', async data => {
-    const { event, payload } = data;
+    const { event, payload } = data
 
     if (event === 'loadMailbox') {
-      const account = store.getAccount();
+      const account = store.getAccount()
       const {
         secretBoxPubKey,
         devicePeerPubKey,
@@ -26,7 +26,7 @@ module.exports = ({channel, env}) => {
         deviceSigningPrivKey,
         serverSig,
         deviceId
-      } = account;
+      } = account
 
       const mailbox = new SDK.Mailbox({
         provider: env === 'production' ? envAPI.prod : envAPI.dev,
@@ -39,30 +39,30 @@ module.exports = ({channel, env}) => {
           device_signing_priv_key: deviceSigningPrivKey,
           sig: serverSig
         }
-      });
+      })
 
-      store.setMailbox(mailbox);
-      channel.send({ event: 'loadMailbox', data: mailbox });
+      store.setMailbox(mailbox)
+      channel.send({ event: 'loadMailbox', data: mailbox })
     }
 
     if (event === 'registerMailbox') {
-      const mailbox = store.getMailbox();
-      await mailbox.registerMailbox(payload);
-      channel.send({ event: 'registerMailbox', data: payload });
+      const mailbox = store.getMailbox()
+      await mailbox.registerMailbox(payload)
+      channel.send({ event: 'registerMailbox', data: payload })
     }
 
     if (event === 'getNewMailMeta') {
       try {
-        const account = store.getAccount();
-        const mailbox = store.getMailbox();
+        const account = store.getAccount()
+        const mailbox = store.getMailbox()
 
-        let meta = {};
+        let meta = {}
 
         try {
           meta = await mailbox.getNewMailMeta(
             account.secretBoxPrivKey,
             account.secretBoxPubKey
-          );
+          )
         } catch (e) {
           channel.send({
             event: 'getNewMailMeta',
@@ -71,10 +71,10 @@ module.exports = ({channel, env}) => {
               message: e.message,
               stacktrace: e.stack
             }
-          });
+          })
         }
 
-        channel.send({ event: 'getNewMailMeta', data: { meta, account } });
+        channel.send({ event: 'getNewMailMeta', data: { meta, account } })
       } catch (e) {
         channel.send({
           event: 'getNewMailMeta',
@@ -83,15 +83,15 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'markArrayAsSynced') {
       try {
-        const mailbox = store.getMailbox();
-        await mailbox.markAsSynced(payload.msgArray);
-        channel.send({ event: 'markArrayAsSynced', data: payload.msgArray });
+        const mailbox = store.getMailbox()
+        await mailbox.markAsSynced(payload.msgArray)
+        channel.send({ event: 'markArrayAsSynced', data: payload.msgArray })
       } catch (e) {
         channel.send({
           event: 'markArrayAsSynced',
@@ -100,7 +100,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -109,9 +109,9 @@ module.exports = ({channel, env}) => {
         const mailboxes = await Mailbox.findAll({
           attributes: [['mailboxId', 'id'], 'address', 'name'],
           raw: true
-        });
+        })
 
-        channel.send({ event: 'getMailboxes', data: mailboxes });
+        channel.send({ event: 'getMailboxes', data: mailboxes })
       } catch (e) {
         channel.send({
           event: 'getMailboxes',
@@ -120,7 +120,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -134,9 +134,9 @@ module.exports = ({channel, env}) => {
           where: { folderId: payload.id, count: true },
           group: ['count'],
           raw: true
-        });
+        })
 
-        channel.send({ event: 'getFolderUnreadCount', data: count });
+        channel.send({ event: 'getFolderUnreadCount', data: count })
       } catch (e) {
         channel.send({
           event: 'getFolderUnreadCount',
@@ -145,7 +145,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -163,9 +163,9 @@ module.exports = ({channel, env}) => {
           where: { mailboxId: payload.id },
           order: [['seq', 'ASC']],
           raw: true
-        });
+        })
 
-        channel.send({ event: 'getMailboxFolders', data: folders });
+        channel.send({ event: 'getMailboxFolders', data: folders })
       } catch (e) {
         channel.send({
           event: 'getMailboxFolders',
@@ -174,7 +174,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -196,8 +196,8 @@ module.exports = ({channel, env}) => {
           ],
           order: [['date', 'DESC']],
           raw: true
-        });
-        channel.send({ event: 'getMessagesByFolderId', data: messages });
+        })
+        channel.send({ event: 'getMessagesByFolderId', data: messages })
       } catch (e) {
         channel.send({
           event: 'getMessagesByFolderId',
@@ -206,15 +206,15 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'getMessageById') {
       try {
-        const email = await Email.findByPk(payload.id, { raw: true });
-        email.id = email.emailId;
-        email.attachments = JSON.parse(email.attachments);
+        const email = await Email.findByPk(payload.id, { raw: true })
+        email.id = email.emailId
+        email.attachments = JSON.parse(email.attachments)
 
         if (email.unread) {
           await Email.update(
@@ -223,7 +223,7 @@ module.exports = ({channel, env}) => {
               where: { emailId: email.id },
               individualHooks: true
             }
-          );
+          )
 
           if (
             email.folderId !== 3 &&
@@ -233,11 +233,11 @@ module.exports = ({channel, env}) => {
             await Folder.decrement(['count'], {
               where: { folderId: email.folderId },
               individualHooks: true
-            });
+            })
           }
-          email.unread = 0;
+          email.unread = 0
         }
-        channel.send({ event: 'getMessagebyId', data: email });
+        channel.send({ event: 'getMessagebyId', data: email })
       } catch (e) {
         channel.send({
           event: 'getMessagebyId',
@@ -246,12 +246,12 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'markAsUnread') {
-      const { id, folderId } = payload;
+      const { id, folderId } = payload
       try {
         await Email.update(
           { unread: true },
@@ -259,12 +259,12 @@ module.exports = ({channel, env}) => {
             where: { emailId: id },
             individualHooks: true
           }
-        );
+        )
         await Folder.increment(['count'], {
           where: { folderId },
           individualHooks: true
-        });
-        channel.send({ event: 'markAsUnread', data: null });
+        })
+        channel.send({ event: 'markAsUnread', data: null })
       } catch (e) {
         channel.send({
           event: 'markAsUnread',
@@ -273,18 +273,18 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'sendEmail') {
-      drive = store.getDrive();
+      drive = store.getDrive()
 
       try {
-        const acct = store.getAccount();
-        const { mailbox } = store.api;
-        const emailFilename = uuidv4();
-        const emailDest = `/email/${emailFilename}.json`;
+        const acct = store.getAccount()
+        const { mailbox } = store.api
+        const emailFilename = uuidv4()
+        const emailDest = `/email/${emailFilename}.json`
 
         let res = await mailbox.send(payload.email, {
           owner: payload.email.from[0].address,
@@ -300,11 +300,11 @@ module.exports = ({channel, env}) => {
           },
           drive,
           dest: emailDest
-        });
+        })
 
-        res = { name: emailFilename, email: payload.email, ...res };
+        res = { name: emailFilename, email: payload.email, ...res }
 
-        channel.send({ event: 'sendEmail', data: res });
+        channel.send({ event: 'sendEmail', data: res })
       } catch (e) {
         channel.send({
           event: 'sendEmail',
@@ -314,40 +314,40 @@ module.exports = ({channel, env}) => {
             stacktrace: e.stack,
             raw: e
           }
-        });
+        })
       }
     }
 
     if (event === 'MAIL SERVICE::saveMessageToDB') {
-      drive = store.getDrive();
+      drive = store.getDrive()
 
-      const { messages, type, newMessage } = payload;
+      const { messages, type, newMessage } = payload
 
-      const asyncMsgs = [];
-      const asyncFolders = [];
+      const asyncMsgs = []
+      const asyncFolders = []
 
       messages.forEach(msg => {
-        const attachments = [];
-        let folderId;
+        const attachments = []
+        let folderId
 
         if (!msg.email) {
-          msg.email = msg;
+          msg.email = msg
         }
 
         if (!msg._id) {
-          msg._id = uuidv4();
+          msg._id = uuidv4()
         }
 
         if (
           (type === 'Sent' && msg.email.emailId) ||
           (type === 'Draft' && msg.email.folderId !== 3)
         ) {
-          msg.email.emailId = null;
+          msg.email.emailId = null
         }
 
         if (msg.email.attachments.length > 0) {
           msg.email.attachments.forEach(file => {
-            const fileId = file.fileId || uuidv4();
+            const fileId = file.fileId || uuidv4()
             const fileObj = {
               id: fileId,
               emailId: msg.email.emailId || msg._id,
@@ -356,9 +356,9 @@ module.exports = ({channel, env}) => {
               size: file.size,
               drive: drive.discoveryKey,
               path: `/file/${fileId}.file`
-            };
+            }
 
-            attachments.push(fileObj);
+            attachments.push(fileObj)
 
             asyncMsgs.push(
               fileUtil.saveFileToDrive({
@@ -366,33 +366,33 @@ module.exports = ({channel, env}) => {
                 content: file.content,
                 file: fileObj
               })
-            );
-          });
+            )
+          })
         }
 
         switch (type) {
           case 'Incoming':
-            folderId = 1; // Save message to Inbox
+            folderId = 1 // Save message to Inbox
             asyncFolders.push(
               Folder.increment(['count'], { where: { folderId: 1 } })
-            );
-            break;
+            )
+            break
           case 'Sent':
-            folderId = 4; // Save message to Sent
-            break;
+            folderId = 4 // Save message to Sent
+            break
           case 'Draft':
-            folderId = 3; // Save message to Drafts
+            folderId = 3 // Save message to Drafts
 
             // Don't increment folder count if this is
             // a draft being updated
             if (!msg.email.emailId) {
               asyncFolders.push(
                 Folder.increment(['count'], { where: { folderId: 3 } })
-              );
+              )
             }
-            break;
+            break
           default:
-            folderId = 0;
+            folderId = 0
         }
 
         const msgObj = {
@@ -411,7 +411,7 @@ module.exports = ({channel, env}) => {
           encKey: msg.email.encKey,
           encHeader: msg.email.encHeader,
           path: msg.email.path
-        };
+        }
 
         if (msg.email.emailId && type !== 'incoming') {
           asyncMsgs.push(
@@ -419,27 +419,27 @@ module.exports = ({channel, env}) => {
               where: { emailId: msg.email.emailId },
               individualHooks: true
             })
-          );
+          )
         } else {
-          asyncMsgs.push(Email.create(msgObj));
+          asyncMsgs.push(Email.create(msgObj))
         }
-      });
+      })
 
       Promise.all(asyncMsgs)
         .then(async items => {
-          const msgArr = [];
+          const msgArr = []
 
-          await Promise.all(asyncFolders);
+          await Promise.all(asyncFolders)
 
           items.forEach(item => {
             if (item && item.dataValues && item.dataValues.bodyAsText) {
-              const msg = { ...item.dataValues };
+              const msg = { ...item.dataValues }
 
-              msg.id = msg.emailId;
-              msgArr.push(msg);
+              msg.id = msg.emailId
+              msgArr.push(msg)
             }
-          });
-          return channel.send({ event: 'MAILBOX WORKER::saveMessageToDB', data: msgArr });
+          })
+          return channel.send({ event: 'MAILBOX WORKER::saveMessageToDB', data: msgArr })
         })
         .catch(e => {
           channel.send({
@@ -449,13 +449,13 @@ module.exports = ({channel, env}) => {
               message: e.message,
               stacktrace: e.stack
             }
-          });
-          throw e;
-        });
+          })
+          throw e
+        })
     }
 
     if (event === 'removeMessages') {
-      channel.send({ event: 'DELETEMAIL', ids: payload.messageIds });
+      channel.send({ event: 'DELETEMAIL', ids: payload.messageIds })
       const msgArr = await Email.findAll({
         attributes: ['emailId', 'folderId', 'path'],
         where: {
@@ -464,9 +464,9 @@ module.exports = ({channel, env}) => {
           }
         },
         raw: true
-      });
+      })
 
-      channel.send({ event: 'DELETEMAIL', msgArr });
+      channel.send({ event: 'DELETEMAIL', msgArr })
 
       try {
         await Email.destroy({
@@ -476,7 +476,7 @@ module.exports = ({channel, env}) => {
             }
           },
           individualHooks: true
-        });
+        })
 
         msgArr.forEach(msg => {
           File.destroy({
@@ -485,8 +485,8 @@ module.exports = ({channel, env}) => {
           })
             .then(res => { })
             .catch(e => {
-              channel.send({ event: 'removeMessages', error: e.message });
-            });
+              channel.send({ event: 'removeMessages', error: e.message })
+            })
 
           if (msg.folderId === 3) {
             Folder.decrement(['count'], {
@@ -495,12 +495,12 @@ module.exports = ({channel, env}) => {
             })
               .then(res => { })
               .catch(e => {
-                channel.send({ event: 'removeMessages', error: e.message });
-              });
+                channel.send({ event: 'removeMessages', error: e.message })
+              })
           }
-        });
+        })
 
-        channel.send({ event: 'removeMessages', data: null });
+        channel.send({ event: 'removeMessages', data: null })
       } catch (e) {
         channel.send({
           event: 'removeMessages',
@@ -509,18 +509,18 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'moveMessages') {
-      const { messages } = payload;
+      const { messages } = payload
 
       try {
-        const ids = messages.map(msg => msg.id);
-        const fromFolder = messages[0].folder.fromId;
-        const toFolder = messages[0].folder.toId;
-        const unreadCount = messages.filter(msg => msg.unread === 1).length;
+        const ids = messages.map(msg => msg.id)
+        const fromFolder = messages[0].folder.fromId
+        const toFolder = messages[0].folder.toId
+        const unreadCount = messages.filter(msg => msg.unread === 1).length
 
         await Email.update(
           { folderId: toFolder },
@@ -532,14 +532,14 @@ module.exports = ({channel, env}) => {
             },
             individualHooks: true
           }
-        );
+        )
 
         if (fromFolder === 3 || fromFolder === 5) {
           await Folder.decrement(['count'], {
             by: messages.length,
             where: { folderId: fromFolder },
             individualHooks: true
-          });
+          })
         }
 
         if (toFolder === 3 || toFolder === 5) {
@@ -547,7 +547,7 @@ module.exports = ({channel, env}) => {
             by: messages.length,
             where: { folderId: toFolder },
             individualHooks: true
-          });
+          })
         }
 
         if (unreadCount > 0) {
@@ -556,7 +556,7 @@ module.exports = ({channel, env}) => {
               by: unreadCount,
               where: { folderId: fromFolder },
               individualHooks: true
-            });
+            })
           }
 
           if (toFolder !== 3 && toFolder !== 5) {
@@ -564,10 +564,10 @@ module.exports = ({channel, env}) => {
               by: unreadCount,
               where: { folderId: toFolder },
               individualHooks: true
-            });
+            })
           }
         }
-        channel.send({ event: 'moveMessages', data: null });
+        channel.send({ event: 'moveMessages', data: null })
       } catch (e) {
         channel.send({
           event: 'moveMessages',
@@ -576,22 +576,22 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'saveMailbox') {
-      const address = payload;
+      const address = payload
 
       try {
-        const mailbox = await Mailbox.create({ address });
+        const mailbox = await Mailbox.create({ address })
 
         for (folder of DefaultFolders) {
-          folder.mailboxId = mailbox.mailboxId;
-          await Folder.create(folder);
+          folder.mailboxId = mailbox.mailboxId
+          await Folder.create(folder)
         }
 
-        channel.send({ event: 'saveMailbox', data: mailbox.dataValues });
+        channel.send({ event: 'saveMailbox', data: mailbox.dataValues })
       } catch (e) {
         channel.send({
           event: 'saveMailbox',
@@ -600,37 +600,37 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     // When Saving multiple files at once
     if (event === 'saveFiles') {
-      drive = store.getDrive();
+      drive = store.getDrive()
 
-      const { filepath, attachments } = payload;
+      const { filepath, attachments } = payload
 
       try {
-        if (filepath === undefined) return 'canceled';
+        if (filepath === undefined) return 'canceled'
 
         await Promise.all(
           attachments.map(async attachment => {
-            const writeStream = fs.createWriteStream(filepath);
+            const writeStream = fs.createWriteStream(filepath)
 
             const file = await File.findByPk(attachment.id, {
               attributes: ['id', 'drive', 'path', 'key', 'header'],
               raw: true
-            });
+            })
 
             await fileUtil.saveFileFromEncryptedStream(writeStream, {
               drive,
               path: file.path,
               key: file.key,
               header: file.header
-            });
+            })
           })
-        );
-        channel.send({ event: 'saveFiles', data: 'success' });
+        )
+        channel.send({ event: 'saveFiles', data: 'success' })
       } catch (e) {
         channel.send({
           event: 'saveFiles',
@@ -639,12 +639,12 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
     if (event === 'searchMailbox') {
-      const { searchQuery } = payload;
+      const { searchQuery } = payload
 
       try {
         if (searchQuery) {
@@ -663,7 +663,7 @@ module.exports = ({channel, env}) => {
               },
               raw: true,
               limit: 5
-            });
+            })
           }
 
           if (searchQuery.indexOf('to: ') > -1) {
@@ -681,7 +681,7 @@ module.exports = ({channel, env}) => {
               },
               raw: true,
               limit: 5
-            });
+            })
           }
 
           const results = await Email.findAll({
@@ -704,9 +704,9 @@ module.exports = ({channel, env}) => {
             },
             raw: true,
             limit: 5
-          });
+          })
 
-          channel.send({ event: 'searchMailbox', data: results });
+          channel.send({ event: 'searchMailbox', data: results })
         }
       } catch (e) {
         channel.send({
@@ -716,7 +716,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -729,10 +729,10 @@ module.exports = ({channel, env}) => {
           icon: payload.icon,
           color: payload.color,
           seq: payload.seq
-        });
+        })
 
-        folder.dataValues.id = folder.dataValues.folderId;
-        channel.send({ event: 'createFolder', data: folder.dataValues });
+        folder.dataValues.id = folder.dataValues.folderId
+        channel.send({ event: 'createFolder', data: folder.dataValues })
       } catch (e) {
         channel.send({
           event: 'createFolder',
@@ -741,7 +741,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -753,9 +753,9 @@ module.exports = ({channel, env}) => {
             where: { folderId: payload.folderId },
             individualHooks: true
           }
-        );
+        )
 
-        channel.send({ event: 'updateFolder', data: folder.dataValues });
+        channel.send({ event: 'updateFolder', data: folder.dataValues })
       } catch (e) {
         channel.send({
           event: 'updateFolder',
@@ -764,7 +764,7 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
 
@@ -775,14 +775,14 @@ module.exports = ({channel, env}) => {
             folderId: payload.folderId
           },
           individualHooks: true
-        });
+        })
 
         await Email.destroy({
           where: { folderId: payload.folderId },
           individualHooks: true
-        });
+        })
 
-        channel.send({ event: 'deleteFolder', data: {} });
+        channel.send({ event: 'deleteFolder', data: {} })
       } catch (e) {
         channel.send({
           event: 'deleteFolder',
@@ -791,8 +791,8 @@ module.exports = ({channel, env}) => {
             message: e.message,
             stacktrace: e.stack
           }
-        });
+        })
       }
     }
-  });
-};
+  })
+}

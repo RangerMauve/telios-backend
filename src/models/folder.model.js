@@ -1,6 +1,6 @@
-const { DataTypes } = require('sequelize');
-const { Model } = require('sequelize');
-const store = require('../Store');
+const { DataTypes } = require('sequelize')
+const { Model } = require('sequelize')
+const store = require('../Store')
 
 module.exports.DefaultFolders = [
   {
@@ -37,8 +37,8 @@ module.exports.DefaultFolders = [
     type: 'default',
     icon: 'trash-o',
     seq: 5
-  },
-];
+  }
+]
 
 const model = {
   folderId: {
@@ -69,13 +69,13 @@ const model = {
   seq: {
     type: DataTypes.INTEGER
   }
-};
+}
 
 class Folder extends Model { }
 
-module.exports.Folder = Folder;
+module.exports.Folder = Folder
 
-module.exports.model = model;
+module.exports.model = model
 
 module.exports.init = async (channel, sequelize, opts) => {
   Folder.init(model, {
@@ -83,43 +83,44 @@ module.exports.init = async (channel, sequelize, opts) => {
     tableName: 'Folder',
     freezeTableName: true,
     timestamps: false
-  });
+  })
 
-  const drive = store.getDrive();
-  const collection = await drive.collection('Folder');
+  const drive = store.getDrive()
+  const collection = await drive.collection('Folder')
 
   Folder.addHook('afterCreate', async (folder, options) => {
     try {
-      await collection.put(folder.folderId, folder.dataValues);
+      await collection.put(folder.folderId, folder.dataValues)
     } catch (err) {
-      console.log('Error saving Folder to Hyperbee', err);
-      throw new Error(err);
+      console.log('Error saving Folder to Hyperbee', err)
+      throw new Error(err)
     }
-  });
+  })
 
   Folder.addHook('afterUpdate', async (folder, options) => {
     try {
-      await collection.put(folder.folderId, folder.dataValues);
+      await collection.put(folder.folderId, folder.dataValues)
     } catch (err) {
-      console.log('Error saving Folder to Hyperbee', err);
-      throw new Error(err);
+      console.log('Error saving Folder to Hyperbee', err)
+      throw new Error(err)
     }
-  });
+  })
 
   Folder.addHook('beforeDestroy', async (folder, options) => {
     try {
-      await collection.del(folder.folderId);
+      await collection.del(folder.folderId)
     } catch (err) {
       channel.send({
-        event: 'BeforeDestroy-deleteFolder', error: {
+        event: 'BeforeDestroy-deleteFolder',
+        error: {
           name: err.name,
           message: err.message,
           stacktrace: err.stack
         }
-      });
-      throw new Error(err);
+      })
+      throw new Error(err)
     }
-  });
+  })
 
-  return Folder;
-};
+  return Folder
+}

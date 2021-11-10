@@ -1,44 +1,44 @@
 class QueueWorker {
-  constructor() {
-    this.queue = [];
-    this.online = true;
+  constructor () {
+    this.queue = []
+    this.online = true
 
     setInterval(() => {
-      if(this.online) {
-        this.processQueue();
+      if (this.online) {
+        this.processQueue()
       }
-    }, 2000);
+    }, 2000)
   }
 
-  add(promise){
+  add (promise) {
     this.queue.push({
       failed: 0,
       working: false,
       promise
-    });
+    })
   }
 
-  processQueue() {
-    let i = this.queue.length;
+  processQueue () {
+    let i = this.queue.length
 
-    while(i--) {
-      const task = this.queue[i];
+    while (i--) {
+      const task = this.queue[i]
       console.log(task)
 
       // if(task.failed > 4) {
       //   this.queue.splice(i, 1);
       // } else {
 
-      if(!task.working) {
-        task.working = true;
+      if (!task.working) {
+        task.working = true
         task.promise()
           .then(() => {
-            this.queue.splice(i, 1);
+            this.queue.splice(i, 1)
           })
           .catch(err => {
-            task.working = false;
-            task.failed += 1;
-          });
+            task.working = false
+            task.failed += 1
+          })
       }
 
       // }
@@ -46,6 +46,6 @@ class QueueWorker {
   }
 }
 
-const instance = new QueueWorker();
+const instance = new QueueWorker()
 
-module.exports = instance;
+module.exports = instance

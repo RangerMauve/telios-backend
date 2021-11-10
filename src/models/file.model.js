@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
-const Sequelize = require('sequelize');
-const { Model } = require('sequelize');
-const store = require('../Store');
+const Sequelize = require('sequelize')
+const { Model } = require('sequelize')
+const store = require('../Store')
 
 const model = {
   id: {
@@ -44,13 +44,13 @@ const model = {
   feed: {
     type: Sequelize.STRING
   }
-};
+}
 
 class File extends Model {}
 
-module.exports.File = File;
+module.exports.File = File
 
-module.exports.model = model;
+module.exports.model = model
 
 module.exports.init = async (channel, sequelize, opts) => {
   File.init(model, {
@@ -58,22 +58,22 @@ module.exports.init = async (channel, sequelize, opts) => {
     tableName: 'File',
     freezeTableName: true,
     timestamps: false
-  });
+  })
 
-  const drive = store.getDrive();
-  const collection = await drive.collection('__File'); // Use default file collection from drive. Creating another one would be duplicative
+  const drive = store.getDrive()
+  const collection = await drive.collection('__File') // Use default file collection from drive. Creating another one would be duplicative
 
   File.addHook('beforeDestroy', async (file, options) => {
     try {
       if (!Array.isArray(file)) {
-        await drive.unlink(file.path);
-        channel.send({ event: 'File-deleteFileFromDBLOG', data: file });
+        await drive.unlink(file.path)
+        channel.send({ event: 'File-deleteFileFromDBLOG', data: file })
       }
     } catch (err) {
-      console.log('Unable to remove File from Hyperbee', err);
-      throw new Error(err);
+      console.log('Unable to remove File from Hyperbee', err)
+      throw new Error(err)
     }
-  });
+  })
 
-  return File;
-};
+  return File
+}

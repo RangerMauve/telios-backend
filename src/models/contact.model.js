@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize');
-const { Model } = require('sequelize');
-const store = require('../Store');
+const Sequelize = require('sequelize')
+const { Model } = require('sequelize')
+const store = require('../Store')
 
 const model = {
   contactId: {
@@ -75,13 +75,13 @@ const model = {
       */
     type: Sequelize.JSON
   }
-};
+}
 
 class Contact extends Model {}
 
-module.exports.Contact = Contact;
+module.exports.Contact = Contact
 
-module.exports.model = model;
+module.exports.model = model
 
 module.exports.init = async (channel, sequelize, opts) => {
   Contact.init(model, {
@@ -89,37 +89,37 @@ module.exports.init = async (channel, sequelize, opts) => {
     tableName: 'Contact',
     freezeTableName: true,
     timestamps: false
-  });
+  })
 
-  const drive = store.getDrive();
-  const collection = await drive.collection('Contact');
+  const drive = store.getDrive()
+  const collection = await drive.collection('Contact')
 
   Contact.addHook('afterCreate', async (contact, options) => {
     try {
-      await collection.put(contact.contactId, contact.dataValues);
+      await collection.put(contact.contactId, contact.dataValues)
     } catch (err) {
-      console.log('Error saving Contact to Hyperbee', err);
+      console.log('Error saving Contact to Hyperbee', err)
     }
-  });
+  })
 
   Contact.addHook('afterUpdate', async (contact, options) => {
     try {
-      await collection.put(contact.contactId, contact.dataValues);
+      await collection.put(contact.contactId, contact.dataValues)
     } catch (err) {
-      console.log('Error updating Contact in Hyperbee', err);
+      console.log('Error updating Contact in Hyperbee', err)
     }
-  });
+  })
 
   Contact.addHook('beforeDestroy', async (contact, options) => {
     try {
       if (!Array.isArray(contact)) {
-        await collection.del(contact.dataValues.contactId);
+        await collection.del(contact.dataValues.contactId)
       }
     } catch (err) {
-      console.log('Unable to remove Contact from Hyperbee', err);
-      throw new Error(err);
+      console.log('Unable to remove Contact from Hyperbee', err)
+      throw new Error(err)
     }
-  });
+  })
 
-  return Contact;
-};
+  return Contact
+}

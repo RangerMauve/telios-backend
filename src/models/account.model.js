@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const { Model } = require('sequelize');
+const fs = require('fs')
+const path = require('path')
+const Sequelize = require('sequelize')
+const { Model } = require('sequelize')
 
 const model = {
   accountId: {
@@ -41,13 +41,13 @@ const model = {
     type: Sequelize.STRING,
     allowNull: false
   }
-};
+}
 
 class Account extends Model { }
 
-module.exports.Account = Account;
+module.exports.Account = Account
 
-module.exports.model = model;
+module.exports.model = model
 
 module.exports.init = async (channel, sequelize, opts) => {
   Account.init(model, {
@@ -55,20 +55,20 @@ module.exports.init = async (channel, sequelize, opts) => {
     tableName: 'Account',
     freezeTableName: true,
     timestamps: false
-  });
+  })
 
-  const store = require('../Store');
-  const drive = store.getDrive();
+  const store = require('../Store')
+  const drive = store.getDrive()
 
   Account.addHook('afterCreate', async (account, options) => {
     try {
-      const readStream = fs.createReadStream(path.join(store.acctPath, '/app.db'));
-      await drive.writeFile('/backup/encrypted.db', readStream);
+      const readStream = fs.createReadStream(path.join(store.acctPath, '/app.db'))
+      await drive.writeFile('/backup/encrypted.db', readStream)
     } catch (err) {
-      channel.send({ event: 'afterCreate', error: err.message });
-      throw new Error(err);
+      channel.send({ event: 'afterCreate', error: err.message })
+      throw new Error(err)
     }
-  });
+  })
 
-  return Account;
-};
+  return Account
+}
