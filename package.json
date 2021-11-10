@@ -1,0 +1,25 @@
+{
+  "name": "telios-backend",
+  "version": "1.0.0",
+  "description": "A reusable backend to for telios email clients to use between desktop and mobile.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RangerMauve/telios-backend.git"
+  },
+  "author": "rangermauve <ranger@mauve.moe> (https://mauve.moe/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RangerMauve/telios-backend/issues"
+  },
+  "homepage": "https://github.com/RangerMauve/telios-backend#readme",
+  "dependencies": {
+    "@telios/client-sdk": "^2.0.0",
+    "remove-markdown": "^0.3.0",
+    "sequelize": "^6.9.0",
+    "umzug": "^2.3.0"
+  }
+}
