@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/RangerMauve/telios-backend#readme",
   "dependencies": {
-    "@telios/client-sdk": "^2.0.0",
+    "@journeyapps/sqlcipher": "^4.0.0",
+    "@telios/client-sdk": "^3.1.0",
+    "@telios/nebula-drive": "^3.0.0",
     "remove-markdown": "^0.3.0",
     "sequelize": "^6.9.0",
     "umzug": "^2.3.0"
