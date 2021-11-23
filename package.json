@@ -20,8 +20,12 @@
     "@journeyapps/sqlcipher": "^4.0.0",
     "@telios/client-sdk": "^3.1.0",
     "@telios/nebula-drive": "^3.0.0",
+    "file-type": "^16.5.3",
+    "memorystream": "^0.3.1",
     "remove-markdown": "^0.3.0",
     "sequelize": "^6.9.0",
-    "umzug": "^2.3.0"
+    "sqlite3": "^5.0.2",
+    "umzug": "^2.3.0",
+    "uuid": "^8.3.2"
   }
 }
