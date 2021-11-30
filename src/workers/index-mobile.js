@@ -2,7 +2,7 @@ const bridge = require('rn-bridge')
 
 const channel = bridge.channel
 
-const userDataPath = bridge.app.datadir
+const userDataPath = bridge.app.datadir()
 const env = 'development'
 
 require('./Account.worker')({channel, userDataPath}); // eslint-disable-line
